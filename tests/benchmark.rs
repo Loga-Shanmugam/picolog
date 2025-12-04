@@ -29,7 +29,7 @@ fn benchmark_throughput_latency() {
         fs::remove_file(path).unwrap();
     }
     
-    let mut logger = Logger::<Data>::new(path.to_string(), 4096, 10_000_000).unwrap();
+    let mut logger = Logger::<Data>::new(path.to_string(), 4096, 1_00_000).unwrap();
     
     let (tx, rx) = unbounded::<(u64, Instant)>();
     

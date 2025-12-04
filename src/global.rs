@@ -18,7 +18,7 @@ pub fn get_ack_number() -> u64 {
 }
 
 pub fn set_ack_number(val: u64) {
-    ACK_NUMBER.store(val, Ordering::Release);
+    ACK_NUMBER.fetch_max(val, Ordering::Release);
 }
 
 pub fn next_page_id() -> u64 {

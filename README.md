@@ -1,4 +1,4 @@
-# Picolog V3: Crash-Consistent HFT Sequencer
+# Picolog: Crash-Consistent HFT Logger
 
 A zero-copy, lock-free, log sequencer for high-frequency trading engines.
 

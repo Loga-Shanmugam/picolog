@@ -68,8 +68,7 @@ Analysis: The system successfully decouples the trading engine from the disk. Wh
     Add to Cargo.toml:
 
     ```
-    [dependencies]
-    picologv2 = { path = "../picologv2" }
+    cargo add picologger
     ```
 
 

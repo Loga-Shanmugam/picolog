@@ -30,7 +30,7 @@ fn benchmark_throughput_latency() {
     }
 
     let mut logger =
-        Logger::<Data>::new().with_write_config(path.to_string(), 4096, 1_000_000, 10_000);
+        Logger::<Data>::new().with_write_config(path.to_string(), 4096, 1_000_000, 10_000, 10 * 1024 * 1024 * 1024);
     logger.start().unwrap();
 
     let (tx, rx) = unbounded::<(u64, Instant)>();

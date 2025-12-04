@@ -24,7 +24,7 @@ fn test_file_integrity() {
     // Write
     {
         let mut logger = Logger::<TestData>::new()
-            .with_write_config(path.to_string(), 1024, 1_000_000, 100_000); // 1ms flush
+            .with_write_config(path.to_string(), 1024, 1_000_000, 100_000, 10 * 1024 * 1024); // 1ms flush
         logger.start().unwrap();
 
         for i in 0..100 {

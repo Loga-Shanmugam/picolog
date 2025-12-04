@@ -96,13 +96,14 @@ Analysis: The system successfully decouples the trading engine from the disk. Wh
     use picologv2::Logger;
 
     fn main() -> Result<(), Box<dyn std::error::Error>> {
-        // 4096 slot ring buffer, flush every 10us, poll every 1us
+        // 4096 slot ring buffer, flush every 10us, poll every 1us, 1GB pre-allocation
         let mut logger = Logger::<Trade>::new()
             .with_write_config(
                 "trades.wal".to_string(), 
                 4096, 
                 10_000,
-                1_000
+                1_000,
+                1024 * 1024 * 1024
             );
         
         logger.start()?;

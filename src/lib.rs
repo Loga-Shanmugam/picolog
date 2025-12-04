@@ -78,6 +78,7 @@ pub struct Logger<T> {
     logpath: Option<String>,
     flush_interval: Option<u64>,
     poll_interval: Option<u64>,
+    pre_alloc_size: Option<u64>,
 }
 
 impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
@@ -91,6 +92,7 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
             logpath: None,
             flush_interval: None,
             poll_interval: None,
+            pre_alloc_size: None,
         }
     }
 
@@ -102,11 +104,13 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
     /// * `capacity` - Size of the ring buffer.
     /// * `flush_interval` - Interval in nanoseconds to flush logs to disk.
     /// * `poll_interval` - Interval in nanoseconds to poll for uring completions.
-    pub fn with_write_config(mut self, logpath: String, capacity: usize, flush_interval: u64, poll_interval: u64) -> Self {
+    /// * `pre_alloc_size` - Size in bytes to pre-allocate for the log file.
+    pub fn with_write_config(mut self, logpath: String, capacity: usize, flush_interval: u64, poll_interval: u64, pre_alloc_size: u64) -> Self {
         self.logpath = Some(logpath);
         self.capacity = capacity;
         self.flush_interval = Some(flush_interval);
         self.poll_interval = Some(poll_interval);
+        self.pre_alloc_size = Some(pre_alloc_size);
         self
     }
 
@@ -116,7 +120,7 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
     ///
     /// * `Result<(), Error>` - Ok if started successfully, Err if configuration is missing.
     pub fn start(&mut self) -> Result<(), Error> {
-        if let (Some(logpath), Some(flush_interval), Some(poll_interval)) = (&self.logpath, self.flush_interval, self.poll_interval) {
+        if let (Some(logpath), Some(flush_interval), Some(poll_interval), Some(pre_alloc_size)) = (&self.logpath, self.flush_interval, self.poll_interval, self.pre_alloc_size) {
             let capacity = self.capacity;
             let mut raw_vec = Vec::with_capacity(capacity);
             for _ in 0..capacity {
@@ -134,7 +138,7 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
 
             let page_manager = PageManager::new(blk_size, 256);
 
-            let file = get_file_handler(&path)?;
+            let file = get_file_handler(&path, pre_alloc_size)?;
             let flush_interval_duration = flush_interval;
             let poll_interval_duration = poll_interval;
 
@@ -251,7 +255,7 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
             let _ = sender.send(index);
             return Some(seq_id);
         }
-        return None;
+        None
     }
 
     /// Retrieves the sequence ID of the last log entry that was successfully flushed to disk.

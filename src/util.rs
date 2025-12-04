@@ -25,7 +25,7 @@ pub fn get_blksize(path: &path::PathBuf) -> u64 {
     }
 }
 
-pub fn get_file_handler(path: &path::PathBuf) -> Result<File, std::io::Error> {
+pub fn get_file_handler(path: &path::PathBuf, pre_alloc_size: u64) -> Result<File, std::io::Error> {
     #[cfg(target_os = "linux")]
     {
         use std::os::unix::fs::OpenOptionsExt;
@@ -38,8 +38,6 @@ pub fn get_file_handler(path: &path::PathBuf) -> Result<File, std::io::Error> {
             .expect("CRITICAL: Failed to open file with O_DIRECT. Verify FS supports it.");
 
         
-        //get it from the user
-        let pre_alloc_size = 10 * 1024 * 1024 * 1024; // 10GB
         if let Ok(metadata) = file.metadata() {
             if metadata.len() < pre_alloc_size {
                  println!("Pre-allocating disk space...");

@@ -89,7 +89,7 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
 
         let worker_buffer = data_buffer.clone();
 
-        let page_manager = PageManager::new(blk_size, 128);
+        let page_manager = PageManager::new(blk_size, 256);
 
         let file = get_file_handler(&path)?;
         let handle = thread::spawn(move || {

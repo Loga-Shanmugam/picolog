@@ -1,0 +1,12 @@
+[package]
+name = "picologv3"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+crossbeam = "0.8.4"
+crossbeam-channel = "0.5.15"
+io-uring = "0.7.11"
+libc = "0.2.178"
+slab = "0.4.11"
+thiserror = "2.0.17"

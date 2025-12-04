@@ -7,7 +7,7 @@ A zero-copy, lock-free, log sequencer for high-frequency trading engines.
 
 Picolog is a specialized Write-Ahead Log (WAL) designed for financial systems where data loss is unacceptable and latency is critical. Unlike general-purpose loggers (Log4j, spdlog) that buffer data in userspace or kernel page cache, Picolog enforces Strict Durability using O_DIRECT and io_uring while maintaining nanosecond-level producer latency.
 
-It serves as the persistence backbone for deterministic trading sequencers (like Raft or Aeron), decoupling the Matching Engine (Hot Path) from the NVMe SSD (Cold Path).
+It serves as the persistence backbone for deterministic trading sequencers, decoupling the Matching Engine (Hot Path) from the NVMe SSD (Cold Path).
 
 ⚠️ Under active development. Not for production use.
 

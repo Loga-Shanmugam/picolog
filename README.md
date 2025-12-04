@@ -108,7 +108,7 @@ Analysis: The system successfully decouples the trading engine from the disk. Wh
         
         logger.start()?;
 
-        let trade = Trade { price: 10050, qty: 100, symbol_id: 1, side: 1, _pad: [0;3] };
+        let trade = Trade { price: 10050, qty: 100, symbol_id: 1, side: 1, strategy_id: 8};
         
         // Returns Some(seq_id) if successful, None if buffer full
         if let Some(seq) = logger.log(trade) {

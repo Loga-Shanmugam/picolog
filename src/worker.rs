@@ -14,6 +14,7 @@ pub struct LogWorker<'a, T> {
     pub pages: PageManager<T>,
     pub last_flush: Instant,
     pub flush_interval: Duration,
+    pub poll_interval: Duration,
     pub logfile: &'a File,
     pub ring: IoUring,
     pub pending_writes: usize,
@@ -30,11 +31,13 @@ impl<'a, T> LogWorker<'a, T> {
 
             let time_since_flush = self.last_flush.elapsed();
 
-            let timeout = if time_since_flush > self.flush_interval {
+            let time_until_flush = if time_since_flush > self.flush_interval {
                 Duration::ZERO
             } else {
                 self.flush_interval - time_since_flush
             };
+
+            let timeout = std::cmp::min(time_until_flush, self.poll_interval);
 
             match self.receiver.recv_timeout(timeout) {
                 Ok(msg) => self.handle_message(msg),

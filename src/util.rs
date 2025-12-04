@@ -48,8 +48,6 @@ pub fn get_file_handler(path: &path::PathBuf) -> Result<File, std::io::Error> {
                  file.sync_all()?; 
             }
         }
-
-        println!("Storage initialized: O_DIRECT enabled, Pre-allocated 10GB");
         Ok(file)
     }
     #[cfg(target_os = "windows")]

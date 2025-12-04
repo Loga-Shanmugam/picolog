@@ -9,11 +9,11 @@ use std::{
 use crate::errors::PicoError;
 
 #[repr(C, packed)]
-struct EntryHeader {
-    seq_id: u64,
-    ts_nanos: u64,
-    len: u16,
-    _pad: [u8; 6],
+pub struct EntryHeader {
+    pub seq_id: u64,
+    pub ts_nanos: u64,
+    pub len: u16,
+    pub _pad: [u8; 6],
 }
 
 pub struct Page<T> {

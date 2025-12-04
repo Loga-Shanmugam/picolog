@@ -29,23 +29,28 @@ pub fn get_file_handler(path: &path::PathBuf) -> Result<File, std::io::Error> {
     #[cfg(target_os = "linux")]
     {
         use std::os::unix::fs::OpenOptionsExt;
-        let res = OpenOptions::new()
+        let file = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
             .custom_flags(libc::O_DIRECT)
-            .open(path);
+            .open(path)
+            .expect("CRITICAL: Failed to open file with O_DIRECT. Verify FS supports it.");
+
         
-        if res.is_err() {
-             println!("O_DIRECT failed, using default buffered IO ");
-             return OpenOptions::new()
-            .read(true)
-            .write(true)
-            .create(true)
-            .open(path);
+        //get it from the user
+        let pre_alloc_size = 10 * 1024 * 1024 * 1024; // 10GB
+        if let Ok(metadata) = file.metadata() {
+            if metadata.len() < pre_alloc_size {
+                 println!("Pre-allocating disk space...");
+                 file.set_len(pre_alloc_size)?; 
+                 // Force metadata sync to disk
+                 file.sync_all()?; 
+            }
         }
-        println!("Using O_DIRECT");
-        res
+
+        println!("Storage initialized: O_DIRECT enabled, Pre-allocated 10GB");
+        Ok(file)
     }
     #[cfg(target_os = "windows")]
     {

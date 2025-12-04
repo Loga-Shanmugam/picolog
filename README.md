@@ -9,6 +9,8 @@ Picolog is a specialized Write-Ahead Log (WAL) designed for financial systems wh
 
 It serves as the persistence backbone for deterministic trading sequencers (like Raft or Aeron), decoupling the Matching Engine (Hot Path) from the NVMe SSD (Cold Path).
 
+⚠️ Under active development
+
 ## Key Features
 
 1. Zero-Copy Serialization: Uses repr(C) casting to write structs directly to page buffers, eliminating heap allocations (malloc) in the hot path.

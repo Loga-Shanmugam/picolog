@@ -21,8 +21,11 @@ mod worker;
 
 #[repr(C)]
 #[derive(Clone, Default)]
+/// A wrapper struct for log data that includes a sequence ID.
 pub struct LogMessage<T> {
+    /// Unique sequence identifier for the log message.
     pub seq_id: u64,
+    /// The actual log data payload.
     pub data: T,
 }
 
@@ -65,6 +68,8 @@ struct LogBuffer<T> {
 unsafe impl<T: Send + Sync> Sync for LogBuffer<T> {}
 unsafe impl<T: Send + Sync> Send for LogBuffer<T> {}
 
+/// The main logger struct responsible for handling log writing and reading operations.
+/// It uses a ring buffer and a background worker thread for asynchronous logging.
 pub struct Logger<T> {
     data_buffer: Option<Arc<LogBuffer<T>>>,
     sender: Option<Sender<usize>>,
@@ -76,6 +81,7 @@ pub struct Logger<T> {
 }
 
 impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
+    /// Creates a new instance of `Logger` with default (empty) configuration.
     pub fn new() -> Self {
         Self {
             data_buffer: None,
@@ -88,6 +94,14 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
         }
     }
 
+    /// Configures the logger for writing logs.
+    ///
+    /// # Arguments
+    ///
+    /// * `logpath` - Path to the log file.
+    /// * `capacity` - Size of the ring buffer.
+    /// * `flush_interval` - Interval in nanoseconds to flush logs to disk.
+    /// * `poll_interval` - Interval in nanoseconds to poll for uring completions.
     pub fn with_write_config(mut self, logpath: String, capacity: usize, flush_interval: u64, poll_interval: u64) -> Self {
         self.logpath = Some(logpath);
         self.capacity = capacity;
@@ -96,6 +110,11 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
         self
     }
 
+    /// Initializes the internal components (buffer, worker thread) and starts the logging process.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(), Error>` - Ok if started successfully, Err if configuration is missing.
     pub fn start(&mut self) -> Result<(), Error> {
         if let (Some(logpath), Some(flush_interval), Some(poll_interval)) = (&self.logpath, self.flush_interval, self.poll_interval) {
             let capacity = self.capacity;
@@ -145,11 +164,21 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
         }
     }
 
+    /// Configures the logger for reading logs.
+    ///
+    /// # Arguments
+    ///
+    /// * `logpath` - Path to the log file to read from.
     pub fn with_read_config(mut self, logpath: String) -> Self {
         self.logpath = Some(logpath);
         self
     }
 
+    /// Reads all log entries from the configured log file.
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Vec<T>, Error>` - A vector of log data if successful, or an error.
     pub fn read(&self) -> Result<Vec<T>, Error> {
         let logpath = self.logpath.as_ref().ok_or(Error::new(std::io::ErrorKind::NotFound, "Log path not configured"))?;
         let mut file = std::fs::File::open(logpath)?;
@@ -197,6 +226,15 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
         Ok(vec)
     }
 
+    /// Adds a new log entry to the buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `data` - The log data to be written.
+    ///
+    /// # Returns
+    ///
+    /// * `Option<u64>` - The sequence ID of the log entry if successful, or `None` if the logger is not started.
     pub fn log(&mut self, data: T) -> Option<u64> {
         if let Some(sender) = &self.sender {
             let seq_id = next_seq_id();
@@ -216,6 +254,11 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
         return None;
     }
 
+    /// Retrieves the sequence ID of the last log entry that was successfully flushed to disk.
+    ///
+    /// # Returns
+    ///
+    /// * `u64` - The sequence ID.
     pub fn get_last_flushed_entry() -> u64 {
         global::get_ack_number()
     }

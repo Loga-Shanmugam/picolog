@@ -8,9 +8,6 @@ pub fn next_seq_id() -> u64 {
     SEQUENCE_ID.fetch_add(1, Ordering::Relaxed)
 }
 
-pub fn get_seq_id() -> u64 {
-    SEQUENCE_ID.load(Ordering::Relaxed)
-}
 
 pub fn get_ack_number() -> u64 {
     ACK_NUMBER.load(Ordering::Acquire)

@@ -1,7 +1,11 @@
 [package]
-name = "picologv3"
-version = "0.1.0"
+name = "picologger"
+version = "0.9.0"
 edition = "2024"
+license = "MIT"
+authors = ["Loga Shanmugam <logashanmugam16@gmail.com>"]
+description = "Logger for HPC"
+repository = "https://github.com/ruslashev/picolog"
 
 [dependencies]
 crossbeam = "0.8.4"

@@ -1,5 +1,5 @@
 use crossbeam_channel::unbounded;
-use picologv3::Logger;
+use picologger::Logger;
 use std::fs;
 use std::thread;
 use std::time::{Duration, Instant};

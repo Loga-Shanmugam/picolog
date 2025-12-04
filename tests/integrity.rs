@@ -1,4 +1,4 @@
-use picologv3::Logger;
+use picologger::Logger;
 use std::fs;
 
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -155,3 +155,5 @@ Locks cause context switches (futex), which cost ~1-2 microseconds. Picolog uses
 
 [ ] Run the log worker in a isolated core to better utilize L1 and L2 cache.
 
+[ ] Add proper documentation to all user facing functions.
+

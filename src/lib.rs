@@ -1,25 +1,25 @@
 mod util;
 use crate::{
     global::next_seq_id,
-    page::{Page, EntryHeader},
+    page::{EntryHeader, Page},
     util::{get_blksize, get_file_handler},
     worker::LogWorker,
 };
 use crossbeam_channel::Sender;
 use std::cell::UnsafeCell;
+use std::io::Read;
+use std::ptr;
 use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 use std::{io::Error, path::PathBuf};
-use std::io::Read;
-use std::ptr;
 
 mod errors;
 mod global;
 mod page;
 mod worker;
 
-#[repr(C)]
+#[repr(C, align(64))]
 #[derive(Clone, Default)]
 /// A wrapper struct for log data that includes a sequence ID.
 pub struct LogMessage<T> {
@@ -105,7 +105,14 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
     /// * `flush_interval` - Interval in nanoseconds to flush logs to disk.
     /// * `poll_interval` - Interval in nanoseconds to poll for uring completions.
     /// * `pre_alloc_size` - Size in bytes to pre-allocate for the log file.
-    pub fn with_write_config(mut self, logpath: String, capacity: usize, flush_interval: u64, poll_interval: u64, pre_alloc_size: u64) -> Self {
+    pub fn with_write_config(
+        mut self,
+        logpath: String,
+        capacity: usize,
+        flush_interval: u64,
+        poll_interval: u64,
+        pre_alloc_size: u64,
+    ) -> Self {
         self.logpath = Some(logpath);
         self.capacity = capacity;
         self.flush_interval = Some(flush_interval);
@@ -120,7 +127,12 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
     ///
     /// * `Result<(), Error>` - Ok if started successfully, Err if configuration is missing.
     pub fn start(&mut self) -> Result<(), Error> {
-        if let (Some(logpath), Some(flush_interval), Some(poll_interval), Some(pre_alloc_size)) = (&self.logpath, self.flush_interval, self.poll_interval, self.pre_alloc_size) {
+        if let (Some(logpath), Some(flush_interval), Some(poll_interval), Some(pre_alloc_size)) = (
+            &self.logpath,
+            self.flush_interval,
+            self.poll_interval,
+            self.pre_alloc_size,
+        ) {
             let capacity = self.capacity;
             let mut raw_vec = Vec::with_capacity(capacity);
             for _ in 0..capacity {
@@ -161,10 +173,13 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
             self.data_buffer = Some(data_buffer);
             self.sender = Some(sender);
             self.worker_handle = Some(handle);
-            
+
             Ok(())
         } else {
-             Err(Error::new(std::io::ErrorKind::InvalidInput, "Config missing"))
+            Err(Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Config missing",
+            ))
         }
     }
 
@@ -184,46 +199,49 @@ impl<T: Send + Sync + Default + Copy + 'static> Logger<T> {
     ///
     /// * `Result<Vec<T>, Error>` - A vector of log data if successful, or an error.
     pub fn read(&self) -> Result<Vec<T>, Error> {
-        let logpath = self.logpath.as_ref().ok_or(Error::new(std::io::ErrorKind::NotFound, "Log path not configured"))?;
+        let logpath = self.logpath.as_ref().ok_or(Error::new(
+            std::io::ErrorKind::NotFound,
+            "Log path not configured",
+        ))?;
         let mut file = std::fs::File::open(logpath)?;
         let mut vec = Vec::new();
         let path = PathBuf::from(logpath);
         let blk_size = get_blksize(&path) as usize;
-        
+
         let mut buffer = vec![0u8; blk_size];
-        
+
         loop {
             let bytes_read = file.read(&mut buffer)?;
             if bytes_read == 0 {
                 break;
             }
-            
+
             let mut cursor = 0;
             while cursor < bytes_read {
                 if cursor + std::mem::size_of::<EntryHeader>() > bytes_read {
-                    break; 
+                    break;
                 }
-                
+
                 let header_ptr = unsafe { buffer.as_ptr().add(cursor) as *const EntryHeader };
                 let header = unsafe { ptr::read_unaligned(header_ptr) };
-                
+
                 if header.len == 0 {
                     break;
                 }
-                
+
                 let msg_size = header.len as usize;
                 let header_size = std::mem::size_of::<EntryHeader>();
                 let total_size = header_size + msg_size;
                 let aligned_size = (total_size + 7) & !7;
-                
+
                 if cursor + total_size > bytes_read {
                     break;
                 }
-                
+
                 let data_ptr = unsafe { buffer.as_ptr().add(cursor + header_size) as *const T };
                 let data = unsafe { ptr::read_unaligned(data_ptr) };
                 vec.push(data);
-                
+
                 cursor += aligned_size;
             }
         }
